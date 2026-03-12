@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chmod Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg1: #050816;
+      --bg2: #0a0f2b;
+      --panel: rgba(8, 15, 35, 0.88);
+      --panel-2: rgba(10, 20, 45, 0.95);
+      --line: rgba(0, 255, 170, 0.22);
+      --cyan: #00f7ff;
+      --green: #00ff9c;
+      --pink: #ff3df2;
+      --yellow: #ffe600;
+      --text: #dffcff;
+      --muted: #8fbec7;
+      --danger: #ff5f7a;
+    }
+
+    body {
+      font-family: "Courier New", monospace;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 61, 242, 0.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(0, 247, 255, 0.18), transparent 30%),
+        radial-gradient(circle at bottom center, rgba(0, 255, 156, 0.12), transparent 30%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      padding: 30px 18px 50px;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 35px 35px;
+      pointer-events: none;
+      opacity: 0.25;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 34px;
+      padding: 30px 20px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(7, 12, 28, 0.7);
+      box-shadow:
+        0 0 25px rgba(0, 247, 255, 0.12),
+        inset 0 0 20px rgba(0, 255, 156, 0.05);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .terminal-tag {
+      display: inline-block;
+      color: var(--green);
+      border: 1px solid rgba(0, 255, 156, 0.35);
+      padding: 6px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+      font-size: 0.92rem;
+      letter-spacing: 1px;
+      box-shadow: 0 0 14px rgba(0, 255, 156, 0.16);
+    }
+
+    .hero h1 {
+      font-size: 4.2rem;
+      color: var(--green);
+      text-shadow:
+        0 0 8px rgba(0,255,156,0.55),
+        0 0 18px rgba(0,255,156,0.35),
+        0 0 32px rgba(0,255,156,0.2);
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      max-width: 880px;
+      margin: 0 auto;
+      font-size: 1.2rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .status-bar {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status-pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 247, 255, 0.28);
+      color: var(--cyan);
+      background: rgba(0, 247, 255, 0.06);
+      box-shadow: 0 0 12px rgba(0, 247, 255, 0.12);
+      font-size: 0.95rem;
+    }
+
+    .permissions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      margin-bottom: 26px;
+    }
+
+    .permission-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow:
+        0 0 20px rgba(0, 255, 156, 0.08),
+        inset 0 0 20px rgba(0, 247, 255, 0.03);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .permission-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -40%;
+      width: 80%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 247, 255, 0.07),
+        transparent
+      );
+      transform: skewX(-20deg);
+    }
+
+    .permission-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(0, 247, 255, 0.45);
+      box-shadow:
+        0 0 28px rgba(0, 247, 255, 0.15),
+        0 0 18px rgba(255, 61, 242, 0.08);
+    }
+
+    .permission-card h2 {
+      text-align: center;
+      color: var(--cyan);
+      font-size: 2rem;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(0,247,255,0.3);
+    }
+
+    .check-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(0, 247, 255, 0.1);
+      color: var(--text);
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .check-row span {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .check-row span::before {
+      content: ">";
+      color: var(--green);
+      text-shadow: 0 0 8px rgba(0,255,156,0.6);
+    }
+
+    input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      accent-color: #00ff9c;
+      cursor: pointer;
+      filter: drop-shadow(0 0 5px rgba(0, 255, 156, 0.45));
+    }
+
+    .result-box {
+      background: var(--panel-2);
+      border: 1px solid rgba(255, 61, 242, 0.22);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow:
+        0 0 25px rgba(255, 61, 242, 0.08),
+        inset 0 0 20px rgba(0, 247, 255, 0.03);
+      margin-bottom: 24px;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .result-header h3 {
+      font-size: 2.2rem;
+      color: var(--pink);
+      text-shadow: 0 0 12px rgba(255,61,242,0.28);
+    }
+
+    .output-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .output {
+      min-width: 220px;
+      padding: 18px 20px;
+      border-radius: 16px;
+      background: rgba(3, 8, 22, 0.95);
+      border: 1px solid rgba(0, 255, 156, 0.25);
+      color: var(--green);
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      box-shadow:
+        0 0 16px rgba(0,255,156,0.08),
+        inset 0 0 12px rgba(0,255,156,0.04);
+      text-shadow: 0 0 10px rgba(0,255,156,0.3);
+    }
+
+    .symbolic {
+      color: var(--yellow);
+      border-color: rgba(255, 230, 0, 0.22);
+      text-shadow: 0 0 10px rgba(255,230,0,0.2);
+    }
+
+    .manual-box {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1.2fr auto;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .manual-box input {
+      width: 100%;
+      padding: 16px 18px;
+      font-size: 1.1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 247, 255, 0.22);
+      background: rgba(2, 8, 20, 0.95);
+      color: var(--cyan);
+      outline: none;
+      box-shadow: inset 0 0 10px rgba(0,247,255,0.05);
+    }
+
+    .manual-box input::placeholder {
+      color: #5fa2ad;
+    }
+
+    .manual-box button {
+      padding: 16px 20px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+      color: #041018;
+      box-shadow: 0 0 18px rgba(0,255,156,0.2);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .manual-box button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 24px rgba(0,255,156,0.3);
+    }
+
+    .warning {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255, 95, 122, 0.08);
+      border: 1px solid rgba(255, 95, 122, 0.22);
+      color: #ffb7c2;
+      display: none;
+      line-height: 1.6;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 22px;
+    }
+
+    .info-card {
+      background: var(--panel);
+      border: 1px solid rgba(0, 247, 255, 0.14);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 0 20px rgba(0, 247, 255, 0.06);
+    }
+
+    .info-card h4 {
+      margin-bottom: 12px;
+      font-size: 1.5rem;
+      color: var(--cyan);
+    }
+
+    .info-card p,
+    .info-card li {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    .info-card ul {
+      padding-left: 22px;
+      margin-top: 8px;
+    }
+
+    .badge-row {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 9px 13px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .badge.green {
+      color: var(--green);
+      background: rgba(0,255,156,0.08);
+    }
+
+    .badge.cyan {
+      color: var(--cyan);
+      background: rgba(0,247,255,0.08);
+    }
+
+    .badge.pink {
+      color: var(--pink);
+      background: rgba(255,61,242,0.08);
+    }
+
+    .mini-table {
+      display: grid;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .mini-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(0,255,156,0.08);
+      padding: 13px 14px;
+      border-radius: 14px;
+      color: var(--text);
+      font-weight: bold;
+    }
+
+    .mini-row span:last-child {
+      color: var(--green);
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 18px;
+      color: #6aa8b5;
+      font-size: 0.98rem;
+    }
+
+    @media (max-width: 920px) {
+      .permissions-grid,
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 {
+        font-size: 2.8rem;
+      }
+
+      .manual-box {
+        grid-template-columns: 1fr;
+      }
+
+      .result-header h3 {
+        font-size: 1.8rem;
+      }
+
+      .output {
+        min-width: 160px;
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <div class="terminal-tag">[ SYSTEM: CHMOD MATRIX ONLINE ]</div>
+      <h1>Chmod Calculator</h1>
+      
+
+      
+    </section>
+
+    <section class="permissions-grid">
+      <div class="permission-card">
+        <h2>Owner</h2>
+        <label class="check-row"><span>Read</span><input type="checkbox" id="owner-read" checked></label>
+        <label class="check-row"><span>Write</span><input type="checkbox" id="owner-write" checked></label>
+        <label class="check-row"><span>Execute</span><input type="checkbox" id="owner-execute" checked></label>
+      </div>
+
+      <div class="permission-card">
+        <h2>Group</h2>
+        <label class="check-row"><span>Read</span><input type="checkbox" id="group-read" checked></label>
+        <label class="check-row"><span>Write</span><input type="checkbox" id="group-write"></label>
+        <label class="check-row"><span>Execute</span><input type="checkbox" id="group-execute" checked></label>
+      </div>
+
+      <div class="permission-card">
+        <h2>Public</h2>
+        <label class="check-row"><span>Read</span><input type="checkbox" id="public-read" checked></label>
+        <label class="check-row"><span>Write</span><input type="checkbox" id="public-write"></label>
+        <label class="check-row"><span>Execute</span><input type="checkbox" id="public-execute"></label>
+      </div>
+    </section>
+
+    <section class="result-box">
+      <div class="result-header">
+        <h3>Permission Output</h3>
+        <div class="output-group">
+          <div class="output" id="octalOutput">754</div>
+          <div class="output symbolic" id="symbolicOutput">rwxr-xr--</div>
+        </div>
+      </div>
+      <div class="manual-box">
+  <input 
+    id="numericInput"
+    type="text"
+    placeholder="Enter numeric chmod (example: 754)"
+  />
+  <button id="applyNumeric">Apply Number</button>
+</div>
+
+      <div class="manual-box">
+        <input
+          id="manualInput"
+          type="text"
+          placeholder="Type a symbolic permission like rwxr-xr--"
+        />
+        <button id="applyBtn">Apply String</button>
+      </div>
+
+      <div class="warning" id="warningBox"></div>
+
+      <p class="footer-note">
+        Manual input is fault tolerant — short, long, or invalid strings get cleaned automatically.
+      </p>
+    </section>
+
+    <section class="info-panel">
+      <div class="info-card">
+        <h4>Access Logic</h4>
+        <p>
+          Linux permissions use three values for each section. Read is 4, write is 2,
+          and execute is 1. Add them together to get each octal digit.
+        </p>
+        <ul>
+          <li>Read = 4</li>
+          <li>Write = 2</li>
+          <li>Execute = 1</li>
+        </ul>
+
+        <div class="badge-row">
+          <span class="badge green">READ: +4</span>
+          <span class="badge cyan">WRITE: +2</span>
+          <span class="badge pink">EXECUTE: +1</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h4>Live Breakdown</h4>
+        <div class="mini-table">
+          <div class="mini-row">
+            <span>Owner</span>
+            <span id="ownerBreakdown">7 → rwx</span>
+          </div>
+          <div class="mini-row">
+            <span>Group</span>
+            <span id="groupBreakdown">5 → r-x</span>
+          </div>
+          <div class="mini-row">
+            <span>Public</span>
+            <span id="publicBreakdown">4 → r--</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function getPermissionValue(readId, writeId, executeId) {
+      let value = 0;
+      let symbol = "";
+
+      const read = document.getElementById(readId).checked;
+      const write = document.getElementById(writeId).checked;
+      const execute = document.getElementById(executeId).checked;
+
+      if (read) {
+        value += 4;
+        symbol += "r";
+      } else {
+        symbol += "-";
+      }
+
+      if (write) {
+        value += 2;
+        symbol += "w";
+      } else {
+        symbol += "-";
+      }
+
+      if (execute) {
+        value += 1;
+        symbol += "x";
+      } else {
+        symbol += "-";
+      }
+
+      return { value, symbol };
+    }
+
+    function setCheckbox(id, checked) {
+      document.getElementById(id).checked = checked;
+    }
+
+    function updatePermissions() {
+      const owner = getPermissionValue("owner-read", "owner-write", "owner-execute");
+      const group = getPermissionValue("group-read", "group-write", "group-execute");
+      const pub = getPermissionValue("public-read", "public-write", "public-execute");
+
+      const octal = `${owner.value}${group.value}${pub.value}`;
+      const symbolic = `${owner.symbol}${group.symbol}${pub.symbol}`;
+
+      document.getElementById("octalOutput").textContent = octal;
+      document.getElementById("symbolicOutput").textContent = symbolic;
+
+      document.getElementById("ownerBreakdown").textContent = `${owner.value} → ${owner.symbol}`;
+      document.getElementById("groupBreakdown").textContent = `${group.value} → ${group.symbol}`;
+      document.getElementById("publicBreakdown").textContent = `${pub.value} → ${pub.symbol}`;
+    }
+
+    function normalizePermissionString(input) {
+      let s = (input || "").trim();
+      const warnings = [];
+
+      if (s.length === 10 && /^[d\-lbcps]/.test(s[0])) {
+        warnings.push("Detected file type character at the start; removed it.");
+        s = s.slice(1);
+      }
+
+      if (s.length > 9) {
+        warnings.push("Input was too long, so it was cut to 9 characters.");
+        s = s.slice(0, 9);
+      }
+
+      if (s.length < 9) {
+        warnings.push("Input was too short, so missing positions were filled with '-'.");
+        s = s.padEnd(9, "-");
+      }
+
+      const expected = ["r", "w", "x", "r", "w", "x", "r", "w", "x"];
+      const chars = s.split("");
+
+      for (let i = 0; i < 9; i++) {
+        if (chars[i] !== expected[i] && chars[i] !== "-") {
+          warnings.push(`Invalid character "${chars[i]}" at position ${i + 1}; replaced with "-".`);
+          chars[i] = "-";
+        }
+      }
+
+      return {
+        normalized: chars.join(""),
+        warnings
+      };
+    }
+
+    function applyPermissionString() {
+      const input = document.getElementById("manualInput").value;
+      const result = normalizePermissionString(input);
+      const s = result.normalized;
+
+      setCheckbox("owner-read", s[0] === "r");
+      setCheckbox("owner-write", s[1] === "w");
+      setCheckbox("owner-execute", s[2] === "x");
+
+      setCheckbox("group-read", s[3] === "r");
+      setCheckbox("group-write", s[4] === "w");
+      setCheckbox("group-execute", s[5] === "x");
+
+      setCheckbox("public-read", s[6] === "r");
+      setCheckbox("public-write", s[7] === "w");
+      setCheckbox("public-execute", s[8] === "x");
+
+      const warningBox = document.getElementById("warningBox");
+
+      if (result.warnings.length > 0) {
+        warningBox.style.display = "block";
+        warningBox.innerHTML = result.warnings.join("<br>");
+      } else {
+        warningBox.style.display = "none";
+        warningBox.innerHTML = "";
+      }
+
+      document.getElementById("manualInput").value = result.normalized;
+      updatePermissions();
+    }
+
+    document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+      checkbox.addEventListener("change", updatePermissions);
+    });
+
+    document.getElementById("applyBtn").addEventListener("click", applyPermissionString);
+
+    document.getElementById("manualInput").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        applyPermissionString();
+      }
+    });
+
+    updatePermissions();
+    function applyNumericPermission() {
+
+  let input = document.getElementById("numericInput").value.trim();
+
+  if(input.length !== 3){
+    alert("Enter a 3 digit chmod number like 754");
+    return;
+  }
+
+  const numbers = input.split("");
+
+  const owner = parseInt(numbers[0]);
+  const group = parseInt(numbers[1]);
+  const pub = parseInt(numbers[2]);
+
+  function setPermissions(value, readId, writeId, execId){
+
+    document.getElementById(readId).checked = (value & 4) !== 0;
+    document.getElementById(writeId).checked = (value & 2) !== 0;
+    document.getElementById(execId).checked = (value & 1) !== 0;
+
+  }
+
+  setPermissions(owner,"owner-read","owner-write","owner-execute");
+  setPermissions(group,"group-read","group-write","group-execute");
+  setPermissions(pub,"public-read","public-write","public-execute");
+
+  updatePermissions();
+}
+
+document.getElementById("applyNumeric").addEventListener("click", applyNumericPermission);
+  </script>
+</body>
+</html>
